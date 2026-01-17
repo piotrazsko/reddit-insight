@@ -33,14 +33,18 @@ function parseSectionsConfig(sectionsConfig?: string): ReportSection[] {
 }
 
 /**
- * Fetch recent posts from database
+ * Fetch unprocessed posts from last 7 days
+ * Only returns posts that haven't been included in a report yet
  */
-async function fetchRecentPosts() {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
+async function fetchUnprocessedPosts() {
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
 
   return prisma.post.findMany({
-    where: { postedAt: { gt: yesterday } },
+    where: {
+      postedAt: { gt: weekAgo },
+      processedAt: null, // Only unprocessed posts
+    },
     include: { source: true },
     orderBy: { postedAt: 'desc' },
     take: 100,
@@ -48,24 +52,44 @@ async function fetchRecentPosts() {
 }
 
 /**
+ * Mark posts as processed and link to report
+ */
+async function markPostsAsProcessed(postIds: string[], reportId: string) {
+  if (postIds.length === 0) return;
+  
+  await prisma.post.updateMany({
+    where: { id: { in: postIds } },
+    data: { 
+      processedAt: new Date(),
+      reportId: reportId,
+    },
+  });
+  
+  console.log(`[AI Pipeline] Linked ${postIds.length} posts to report ${reportId}`);
+}
+
+/**
  * Main AI Pipeline for generating daily reports
  * 
  * Pipeline Steps:
- * 1. Fetch posts → 2. Prepare text → 3. Build instructions → 
- * 4. Extract content → 5. Translate → 6. Format → 7. Save
+ * 1. Fetch unprocessed posts → 2. Prepare text → 3. Build instructions → 
+ * 4. Extract content → 5. Translate → 6. Format → 7. Save → 8. Mark processed
  */
 export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: string) {
   console.log('[AI Pipeline] Starting report generation...');
 
-  // Step 1: Fetch posts
-  const posts = await fetchRecentPosts();
+  // Step 1: Fetch unprocessed posts
+  const posts = await fetchUnprocessedPosts();
 
   if (posts.length === 0) {
-    console.log('[AI Pipeline] No posts found in the last 24 hours');
+    console.log('[AI Pipeline] No unprocessed posts found');
     return null;
   }
 
-  console.log(`[AI Pipeline] Found ${posts.length} posts to analyze`);
+  console.log(`[AI Pipeline] Found ${posts.length} unprocessed posts to analyze`);
+
+  // Keep track of post IDs for marking as processed later
+  const postIds = posts.map((p) => p.id);
 
   // Initialize context
   const sections = parseSectionsConfig(sectionsConfig);
@@ -100,6 +124,9 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
       summary: ctx.markdown!,
     },
   });
+
+  // Step 8: Mark posts as processed and link to report
+  await markPostsAsProcessed(postIds, report.id);
 
   console.log(`[AI Pipeline] Report generated: ${report.id}`);
 

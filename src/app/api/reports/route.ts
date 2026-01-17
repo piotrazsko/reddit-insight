@@ -13,6 +13,16 @@ export async function DELETE(request: Request) {
       );
     }
 
+    // Clear processedAt for posts linked to this report (so they can be reprocessed)
+    await prisma.post.updateMany({
+      where: { reportId: id },
+      data: { 
+        processedAt: null,
+        reportId: null,
+      },
+    });
+
+    // Delete the report
     await prisma.report.delete({
       where: { id },
     });

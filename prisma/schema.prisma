@@ -21,18 +21,21 @@ model Source {
 }
 
 model Post {
-  id         String   @id @default(uuid())
-  sourceId   String
-  source     Source   @relation(fields: [sourceId], references: [id])
-  externalId String   // Unique ID from source
-  title      String
-  content    String   // Selftext or content
-  url        String
-  permalink  String
-  author     String
-  score      Int      @default(0)
-  postedAt   DateTime
-  createdAt  DateTime @default(now())
+  id          String   @id @default(uuid())
+  sourceId    String
+  source      Source   @relation(fields: [sourceId], references: [id])
+  externalId  String   // Unique ID from source
+  title       String
+  content     String   // Selftext or content
+  url         String
+  permalink   String
+  author      String
+  score       Int      @default(0)
+  postedAt    DateTime
+  createdAt   DateTime @default(now())
+  processedAt DateTime? // When this post was included in a report
+  reportId    String?   // Link to report that processed this post
+  report      Report?   @relation(fields: [reportId], references: [id], onDelete: SetNull)
   
   @@unique([sourceId, externalId])
 }
@@ -42,6 +45,7 @@ model Report {
   title     String
   summary   String   // Markdown
   createdAt DateTime @default(now())
+  posts     Post[]   // Posts included in this report
 }
 
 model User {
