@@ -62,17 +62,18 @@ export function preparePosts(ctx: PipelineContext): PipelineContext {
  */
 export function buildSectionInstructions(ctx: PipelineContext): PipelineContext {
   const sectionInstructions = ctx.sections
-    .map((s) => {
-      let instruction = `\n### Category: "${s.title}"\nInstruction: ${s.prompt}`;
+    .map((s, index) => {
+      let instruction = `\n${index + 1}. Category: "${s.title}"`;
+      instruction += `\n   Task: ${s.prompt}`;
       
       if (s.sourceId) {
         // Find the source name for this sourceId
         const matchingPost = ctx.posts.find((p) => p.sourceId === s.sourceId);
         if (matchingPost) {
-          instruction += `\n⚠️ RESTRICTION: Only analyze posts from "${matchingPost.sourceName}". Ignore all other sources for this category.`;
+          instruction += `\n   ⚠️ RESTRICTION: Only from "${matchingPost.sourceName}" source. IGNORE other sources.`;
         }
       } else {
-        instruction += `\nScope: Analyze posts from ALL sources.`;
+        instruction += `\n   Scope: ALL sources - analyze EVERY post for this category.`;
       }
       
       return instruction;

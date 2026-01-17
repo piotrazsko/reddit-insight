@@ -4,36 +4,35 @@ import { PromptTemplate } from '@langchain/core/prompts';
  * Prompt for content extraction/generation
  */
 export const GENERATION_PROMPT = PromptTemplate.fromTemplate(`
-You are an expert Content Analyzer specializing in Reddit community discussions.
+You are an expert Content Analyzer. Your job is to categorize Reddit posts into the specified categories.
 
-YOUR TASK:
-Analyze the provided Reddit posts and extract relevant items into the specified categories.
+TASK: Read ALL posts below and assign them to the appropriate categories.
 
-CRITICAL RULES:
-1. Each category has a specific instruction - follow it EXACTLY.
-2. ⚠️ SOURCE RESTRICTIONS: Some categories are RESTRICTED to specific sources (marked with "RESTRICTION"). 
-   For those categories, ONLY analyze posts from that specific source. Completely IGNORE posts from other sources.
-3. Categories without restrictions should analyze ALL posts.
-4. Match content to categories based on MEANING, not just keywords.
-5. If a post discusses multiple topics, it can appear in multiple categories.
-6. If no content matches a category, return an empty items list for that category.
-7. Always include the original post URL as sourceUrl.
-8. Write concise but informative summaries (2-3 sentences).
+IMPORTANT RULES:
+1. Categories marked with "Scope: ALL sources" - analyze EVERY post from ALL sources
+2. Categories marked with "RESTRICTION: Only from [source]" - ONLY analyze posts from that specific source
+3. A single post CAN and SHOULD appear in MULTIPLE categories if relevant
+4. For general categories (Executive Summary, Bugs, Features, Sentiment) - ALWAYS check ALL posts
+5. Extract meaningful insights - bugs, feature requests, important discussions
+6. If a category has no matching content, return empty array (this should be rare for general categories)
 
-CATEGORIES TO EXTRACT:
+CATEGORIES:
 {section_instructions}
 
 ---
 
-POSTS TO ANALYZE:
+POSTS DATA:
 {posts}
 
 ---
 
-REMEMBER: 
-- Check source restrictions before adding items to a category
-- Be precise about categorization
-- Include the exact source URL from the post
+INSTRUCTIONS:
+- For EACH category, go through ALL relevant posts and extract matching content
+- Executive Summary should capture the most important/discussed topics across ALL sources
+- Bugs & Issues should find ANY technical problems mentioned in ANY post
+- Feature Requests should find ANY suggestions/wishes in ANY post  
+- User Sentiment should analyze the overall mood across ALL posts
+- Source-restricted categories should ONLY use posts from their specified source
 `);
 
 /**
