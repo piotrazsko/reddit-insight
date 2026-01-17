@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { DEFAULT_REPORT_SECTIONS } from './defaults';
 import { ChatOllama } from "@langchain/ollama";
 import { RunnableLambda } from "@langchain/core/runnables";
+import { OPENAI_DEFAULT_MODEL } from './openaiModels';
 
 export interface AIConfig {
     provider: string; // 'openai' | 'ollama'
@@ -73,10 +74,10 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
       });
   } else {
       // Default to OpenAI
-      console.log(`[AI] Using OpenAI: ${aiConfig.openaiModel || 'gpt-4o'}`);
+      console.log(`[AI] Using OpenAI: ${aiConfig.openaiModel || OPENAI_DEFAULT_MODEL}`);
       model = new ChatOpenAI({
         openAIApiKey: aiConfig.openaiKey || process.env.OPENAI_API_KEY,
-        modelName: aiConfig.openaiModel || 'gpt-4o', 
+        modelName: aiConfig.openaiModel || OPENAI_DEFAULT_MODEL, 
         temperature: 0.2,
       });
   }
@@ -186,7 +187,7 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
   const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   // Determine models used for metadata
-  const genModel = aiConfig.provider === 'ollama' ? (aiConfig.ollamaModel || 'llama3') : (aiConfig.openaiModel || 'gpt-4o');
+  const genModel = aiConfig.provider === 'ollama' ? (aiConfig.ollamaModel || 'llama3') : (aiConfig.openaiModel || OPENAI_DEFAULT_MODEL);
   // If translation happened, it used the same model instance currently
   const footer = `\n\n---\n> **Generation Model:** ${aiConfig.provider} (${genModel}) | **Language:** ${aiConfig.reportLanguage || 'English'}`;
 

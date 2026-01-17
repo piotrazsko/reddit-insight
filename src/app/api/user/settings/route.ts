@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { OPENAI_DEFAULT_MODEL } from '@/lib/openaiModels';
 
 // ... imports
 
@@ -31,7 +32,7 @@ export async function GET() {
         aiProvider: user?.aiProvider || 'openai',
         ollamaUrl: user?.ollamaUrl || 'http://localhost:11434',
         ollamaModel: user?.ollamaModel || 'llama3',
-        openaiModel: user?.openaiModel || 'gpt-4o',
+        openaiModel: user?.openaiModel || OPENAI_DEFAULT_MODEL,
         reportLanguage: user?.reportLanguage || 'English'
     });
   } catch (error) {

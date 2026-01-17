@@ -3,6 +3,7 @@ import { generateDailyReport } from '@/lib/ai';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { OPENAI_DEFAULT_MODEL } from '@/lib/openaiModels';
 
 export async function POST() {
   try {
@@ -12,7 +13,7 @@ export async function POST() {
       openaiKey: undefined as string | undefined,
       ollamaUrl: undefined as string | undefined,
       ollamaModel: undefined as string | undefined,
-      openaiModel: 'gpt-4o',
+      openaiModel: OPENAI_DEFAULT_MODEL,
       reportLanguage: 'English'
     };
     let reportSections: string | undefined;

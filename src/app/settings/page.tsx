@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Trash2, AlertTriangle, Loader2, Plus, Settings as SettingsIcon, X, Edit2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { DEFAULT_REPORT_SECTIONS } from '@/lib/defaults';
+import { OPENAI_DEFAULT_MODEL, OPENAI_MODELS } from '@/lib/openaiModels';
 import { toast } from 'sonner';
 
 interface ReportSection {
@@ -30,7 +31,7 @@ export default function SettingsPage() {
   const [, setSectionsLoading] = useState(false);
   
   const [apiKey, setApiKey] = useState('');
-  const [openaiModel, setOpenaiModel] = useState('gpt-4o');
+    const [openaiModel, setOpenaiModel] = useState(OPENAI_DEFAULT_MODEL);
   const [aiProvider, setAiProvider] = useState('openai');
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [ollamaModel, setOllamaModel] = useState('llama3');
@@ -394,12 +395,11 @@ export default function SettingsPage() {
                                     onChange={(e) => setOpenaiModel(e.target.value)}
                                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 transition-colors appearance-none"
                                 >
-                                    <option value="gpt-4o">GPT-4o (Best)</option>
-                                    <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
-                                    <option value="o1-preview">o1-preview (Reasoning)</option>
-                                    <option value="o1-mini">o1-mini (Fast Reasoning)</option>
-                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                    {OPENAI_MODELS.map((option) => (
+                                        <option key={option.id} value={option.id}>
+                                            {option.label}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
