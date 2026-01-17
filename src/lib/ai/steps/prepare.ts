@@ -66,11 +66,18 @@ export function buildSectionInstructions(ctx: PipelineContext): PipelineContext 
       let instruction = `\n${index + 1}. Category: "${s.title}"`;
       instruction += `\n   Task: ${s.prompt}`;
       
-      if (s.sourceId) {
-        // Find the source name for this sourceId
-        const matchingPost = ctx.posts.find((p) => p.sourceId === s.sourceId);
-        if (matchingPost) {
-          instruction += `\n   ⚠️ RESTRICTION: Only from "${matchingPost.sourceName}" source. IGNORE other sources.`;
+      const sourceIds = s.sourceIds || [];
+      if (sourceIds.length > 0) {
+        // Find the source names for these sourceIds
+        const sourceNames = sourceIds
+          .map(sourceId => {
+            const matchingPost = ctx.posts.find((p) => p.sourceId === sourceId);
+            return matchingPost?.sourceName;
+          })
+          .filter(Boolean);
+        
+        if (sourceNames.length > 0) {
+          instruction += `\n   ⚠️ RESTRICTION: Only from these sources: ${sourceNames.map(n => `"${n}"`).join(', ')}. IGNORE other sources.`;
         }
       } else {
         instruction += `\n   Scope: ALL sources - analyze EVERY post for this category.`;
@@ -87,8 +94,9 @@ export function buildSectionInstructions(ctx: PipelineContext): PipelineContext 
  * Get posts filtered by section (if source-restricted)
  */
 export function getPostsForSection(ctx: PipelineContext, section: ReportSection): PostData[] {
-  if (section.sourceId) {
-    return ctx.posts.filter((p) => p.sourceId === section.sourceId);
+  const sourceIds = section.sourceIds || [];
+  if (sourceIds.length > 0) {
+    return ctx.posts.filter((p) => sourceIds.includes(p.sourceId));
   }
   return ctx.posts;
 }

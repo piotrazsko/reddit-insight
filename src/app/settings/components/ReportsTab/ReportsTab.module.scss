@@ -142,6 +142,16 @@
   white-space: nowrap;
 }
 
+.tdSources {
+  padding: 1rem;
+  color: rgb(147 51 234); // purple-500
+  font-size: 0.875rem;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tdDescription {
   padding: 1rem;
   color: rgb(113 113 122); // zinc-500

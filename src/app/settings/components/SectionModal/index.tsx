@@ -1,7 +1,7 @@
 'use client';
 
-import { memo } from 'react';
-import { X } from 'lucide-react';
+import { memo, useCallback } from 'react';
+import { X, Check } from 'lucide-react';
 import type { Source } from '../../types';
 import styles from './SectionModal.module.scss';
 
@@ -9,7 +9,7 @@ interface SectionFormData {
   title: string;
   description: string;
   prompt: string;
-  sourceId: string;
+  sourceIds: string[];
 }
 
 interface SectionModalProps {
@@ -31,7 +31,21 @@ export const SectionModal = memo<SectionModalProps>(({
   onSave,
   onFormChange,
 }) => {
+  const handleSourceToggle = useCallback((sourceId: string) => {
+    const currentIds = form.sourceIds || [];
+    const newIds = currentIds.includes(sourceId)
+      ? currentIds.filter(id => id !== sourceId)
+      : [...currentIds, sourceId];
+    onFormChange({ ...form, sourceIds: newIds });
+  }, [form, onFormChange]);
+
+  const handleSelectAll = useCallback(() => {
+    onFormChange({ ...form, sourceIds: [] });
+  }, [form, onFormChange]);
+
   if (!isOpen) return null;
+
+  const isAllSources = !form.sourceIds || form.sourceIds.length === 0;
 
   return (
     <div className={styles.overlay}>
@@ -70,19 +84,36 @@ export const SectionModal = memo<SectionModalProps>(({
 
           <div className={styles.field}>
             <label className={styles.label}>Source Restriction (Optional)</label>
-            <select
-              value={form.sourceId}
-              onChange={(e) => onFormChange({ ...form, sourceId: e.target.value })}
-              className={styles.select}
-            >
-              <option value="">All Sources</option>
-              {sources.map(source => (
-                <option key={source.id} value={source.id}>
-                  {source.name} ({source.type})
-                </option>
-              ))}
-            </select>
-            <p className={styles.hint}>Only analyze posts from this specific source.</p>
+            <p className={styles.hint}>Select sources to restrict analysis. Leave unchecked to analyze all sources.</p>
+            <div className={styles.sourceList}>
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                className={`${styles.sourceItem} ${isAllSources ? styles.sourceItemActive : ''}`}
+              >
+                <span className={styles.sourceCheckbox}>
+                  {isAllSources && <Check size={12} />}
+                </span>
+                <span>All Sources</span>
+              </button>
+              {sources.map(source => {
+                const isSelected = form.sourceIds?.includes(source.id);
+                return (
+                  <button
+                    key={source.id}
+                    type="button"
+                    onClick={() => handleSourceToggle(source.id)}
+                    className={`${styles.sourceItem} ${isSelected ? styles.sourceItemActive : ''}`}
+                  >
+                    <span className={styles.sourceCheckbox}>
+                      {isSelected && <Check size={12} />}
+                    </span>
+                    <span>{source.name}</span>
+                    <span className={styles.sourceType}>{source.type}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className={styles.field}>

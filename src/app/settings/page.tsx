@@ -46,7 +46,7 @@ export default function SettingsPage() {
     title: '',
     description: '',
     prompt: '',
-    sourceId: '',
+    sourceIds: [] as string[],
   });
 
   // Fetch settings on mount
@@ -198,7 +198,7 @@ export default function SettingsPage() {
 
   const openAddModal = useCallback(() => {
     setEditingSection(null);
-    setSectionForm({ title: '', description: '', prompt: '', sourceId: '' });
+    setSectionForm({ title: '', description: '', prompt: '', sourceIds: [] });
     setIsModalOpen(true);
   }, []);
 
@@ -208,7 +208,7 @@ export default function SettingsPage() {
       title: section.title,
       description: section.description,
       prompt: section.prompt,
-      sourceId: section.sourceId || '',
+      sourceIds: section.sourceIds || [],
     });
     setIsModalOpen(true);
   }, []);
@@ -268,6 +268,7 @@ export default function SettingsPage() {
       {activeTab === 'reports' && (
         <ReportsTab
           sections={sections}
+          sources={sources}
           onAddClick={openAddModal}
           onEditClick={openEditModal}
           onRemove={removeSection}

@@ -20,7 +20,7 @@ export interface ReportSection {
   title: string;
   description: string;
   prompt: string;
-  sourceId?: string;
+  sourceIds?: string[];
 }
 
 /**

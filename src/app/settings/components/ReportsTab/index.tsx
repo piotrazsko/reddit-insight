@@ -1,12 +1,13 @@
 'use client';
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { Plus, Trash2, Edit2 } from 'lucide-react';
-import type { ReportSection } from '../../types';
+import type { ReportSection, Source } from '../../types';
 import styles from './ReportsTab.module.scss';
 
 interface ReportsTabProps {
   sections: ReportSection[];
+  sources: Source[];
   onAddClick: () => void;
   onEditClick: (section: ReportSection) => void;
   onRemove: (id: string, e: React.MouseEvent) => void;
@@ -15,6 +16,7 @@ interface ReportsTabProps {
 
 export const ReportsTab = memo<ReportsTabProps>(({
   sections,
+  sources,
   onAddClick,
   onEditClick,
   onRemove,
@@ -23,6 +25,20 @@ export const ReportsTab = memo<ReportsTabProps>(({
   const handleRowClick = useCallback((section: ReportSection) => {
     onEditClick(section);
   }, [onEditClick]);
+
+  const sourceMap = useMemo(() => {
+    return new Map(sources.map(s => [s.id, s.name]));
+  }, [sources]);
+
+  const getSourcesLabel = useCallback((sourceIds?: string[]) => {
+    if (!sourceIds || sourceIds.length === 0) {
+      return 'All';
+    }
+    const names = sourceIds
+      .map(id => sourceMap.get(id))
+      .filter(Boolean);
+    return names.length > 0 ? names.join(', ') : 'All';
+  }, [sourceMap]);
 
   return (
     <div className={styles.container}>
@@ -47,7 +63,7 @@ export const ReportsTab = memo<ReportsTabProps>(({
             <tr className={styles.tableHeader}>
               <th className={styles.th}>Title</th>
               <th className={`${styles.th} ${styles.thPrompt}`}>Prompt</th>
-              <th className={styles.th}>Description</th>
+              <th className={styles.th}>Sources</th>
               <th className={`${styles.th} ${styles.thActions}`}>Actions</th>
             </tr>
           </thead>
@@ -60,7 +76,9 @@ export const ReportsTab = memo<ReportsTabProps>(({
               >
                 <td className={styles.tdTitle}>{section.title}</td>
                 <td className={styles.tdPrompt} title={section.prompt}>{section.prompt}</td>
-                <td className={styles.tdDescription}>{section.description}</td>
+                <td className={styles.tdSources} title={getSourcesLabel(section.sourceIds)}>
+                  {getSourcesLabel(section.sourceIds)}
+                </td>
                 <td className={styles.tdActions}>
                   <div className={styles.actionButtons}>
                     <button

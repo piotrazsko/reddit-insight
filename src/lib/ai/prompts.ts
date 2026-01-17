@@ -10,11 +10,12 @@ TASK: Read ALL posts below and assign them to the appropriate categories.
 
 IMPORTANT RULES:
 1. Categories marked with "Scope: ALL sources" - analyze EVERY post from ALL sources
-2. Categories marked with "RESTRICTION: Only from [source]" - ONLY analyze posts from that specific source
+2. Categories marked with "RESTRICTION: Only from [sources]" - ONLY analyze posts from those specific sources listed
 3. A single post CAN and SHOULD appear in MULTIPLE categories if relevant
 4. For general categories (Executive Summary, Bugs, Features, Sentiment) - ALWAYS check ALL posts
 5. Extract meaningful insights - bugs, feature requests, important discussions
 6. If a category has no matching content, return empty array (this should be rare for general categories)
+7. When a category is restricted to multiple sources, include posts from ANY of those listed sources
 
 CATEGORIES:
 {section_instructions}
@@ -32,7 +33,8 @@ INSTRUCTIONS:
 - Bugs & Issues should find ANY technical problems mentioned in ANY post
 - Feature Requests should find ANY suggestions/wishes in ANY post  
 - User Sentiment should analyze the overall mood across ALL posts
-- Source-restricted categories should ONLY use posts from their specified source
+- Source-restricted categories should ONLY use posts from their specified source(s)
+- When multiple sources are specified, include posts from ALL of those sources
 `);
 
 /**
