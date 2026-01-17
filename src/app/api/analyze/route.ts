@@ -4,15 +4,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { OPENAI_DEFAULT_MODEL } from '@/lib/openaiModels';
+import type { AIConfig } from '@/lib/ai/types';
 
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    const aiConfig = {
+    const aiConfig: AIConfig = {
       provider: 'openai',
-      openaiKey: undefined as string | undefined,
-      ollamaUrl: undefined as string | undefined,
-      ollamaModel: undefined as string | undefined,
+      openaiKey: undefined,
+      ollamaUrl: undefined,
+      ollamaModel: undefined,
       openaiModel: OPENAI_DEFAULT_MODEL,
       reportLanguage: 'English'
     };
@@ -33,7 +34,7 @@ export async function POST() {
         });
 
         if (user) {
-          aiConfig.provider = user.aiProvider;
+          aiConfig.provider = user.aiProvider as 'openai' | 'ollama';
           if (user.openaiKey) aiConfig.openaiKey = user.openaiKey;
           if (user.ollamaUrl) aiConfig.ollamaUrl = user.ollamaUrl;
           if (user.ollamaModel) aiConfig.ollamaModel = user.ollamaModel;
