@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: reddit-insight:latest
+    container_name: reddit-insight
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:/app/db/dev.db
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - db_data:/app/db
+
+volumes:
+  db_data:
