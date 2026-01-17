@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
 import { DeleteReportButton } from '@/components/DeleteReportButton';
+import { PageHeader } from '@/components/PageHeader';
+import { EmptyState } from '@/components/EmptyState';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +13,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-white">Reports</h1>
-        <p className="text-zinc-500 mt-2">Archive of AI-generated insights</p>
-      </div>
+      <PageHeader title="Reports" description="Archive of AI-generated insights" />
 
       <div className="grid gap-4">
         {reports.map((report) => (
@@ -25,27 +24,23 @@ export default async function ReportsPage() {
             <div className="flex justify-between items-start">
               <Link href={`/reports/${report.id}`} className="flex-1">
                 <div className="flex justify-between items-center mb-2">
-                    <h2 className="text-lg font-semibold text-zinc-200 group-hover:text-blue-400 transition-colors">
-                        {report.title}
-                    </h2>
-                    <span className="text-sm text-zinc-500 mr-8">
-                        {new Date(report.createdAt).toLocaleString()}
-                    </span>
+                  <h2 className="text-lg font-semibold text-zinc-200 group-hover:text-blue-400 transition-colors">
+                    {report.title}
+                  </h2>
+                  <span className="text-sm text-zinc-500 mr-8">
+                    {new Date(report.createdAt).toLocaleString()}
+                  </span>
                 </div>
-                <p className="text-zinc-400 line-clamp-2 text-sm">
-                 {report.summary}
-                </p>
+                <p className="text-zinc-400 line-clamp-2 text-sm">{report.summary}</p>
               </Link>
-              
+
               <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                 <DeleteReportButton id={report.id} />
               </div>
             </div>
           </div>
         ))}
-        {reports.length === 0 && (
-          <p className="text-zinc-500">No reports found.</p>
-        )}
+        {reports.length === 0 && <EmptyState message="No reports found." />}
       </div>
     </div>
   );

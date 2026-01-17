@@ -1,0 +1,69 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: black;
+  padding: 1rem;
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  background-color: rgb(24 24 27); // zinc-900
+  padding: 2rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(39 39 42); // zinc-800
+}
+
+.header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.logo {
+  width: 4rem;
+  height: 4rem;
+  margin-bottom: 1rem;
+  position: relative;
+}
+
+.logoImage {
+  object-fit: contain;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  background: linear-gradient(to right, rgb(96 165 250), rgb(168 85 247));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  margin-top: 0.5rem;
+  color: rgb(161 161 170); // zinc-400
+}
+
+.footer {
+  text-align: center;
+}
+
+.linkText {
+  font-size: 0.875rem;
+  color: rgb(113 113 122); // zinc-500
+}
+
+.link {
+  color: rgb(96 165 250); // blue-400
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

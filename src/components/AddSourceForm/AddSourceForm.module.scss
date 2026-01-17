@@ -1,0 +1,70 @@
+.form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.inputWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.prefix {
+  position: absolute;
+  inset: 0;
+  left: 0.75rem;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: rgb(113 113 122); // zinc-500
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  padding-left: 2rem;
+  background-color: rgb(24 24 27); // zinc-900
+  border: 1px solid rgb(63 63 70); // zinc-700
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  padding-left: 2rem;
+  color: white;
+  outline: none;
+  transition: border-color 0.2s;
+
+  &:focus {
+    border-color: rgb(59 130 246); // blue-500
+  }
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgb(37 99 235); // blue-600
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgb(59 130 246); // blue-500
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

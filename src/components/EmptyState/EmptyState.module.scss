@@ -1,0 +1,13 @@
+.container {
+  color: rgb(113 113 122); // zinc-500
+  font-style: italic;
+}
+
+.containerDashed {
+  padding: 1.5rem;
+  background-color: rgba(24, 24, 27, 0.5); // zinc-900/50
+  border: 1px dashed rgb(39 39 42); // zinc-800
+  border-radius: 0.75rem;
+  text-align: center;
+  color: rgb(113 113 122); // zinc-500
+}

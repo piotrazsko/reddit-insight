@@ -1,0 +1,29 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: white;
+}
+
+.titleGradient {
+  font-size: 1.875rem;
+  font-weight: 700;
+  background: linear-gradient(to right, white, rgb(161 161 170));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.description {
+  color: rgb(113 113 122); // zinc-500
+  margin-top: 0.5rem;
+}
+
+.action {
+  flex-shrink: 0;
+}

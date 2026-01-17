@@ -1,0 +1,19 @@
+.card {
+  padding: 1.5rem;
+  background-color: rgb(24 24 27); // zinc-900
+  border: 1px solid rgb(39 39 42); // zinc-800
+  border-radius: 0.75rem;
+}
+
+.label {
+  color: rgb(113 113 122); // zinc-500
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 0.5rem;
+}
