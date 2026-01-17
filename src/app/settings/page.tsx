@@ -27,9 +27,10 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(false);
   const [keyLoading, setKeyLoading] = useState(false);
-  const [sectionsLoading, setSectionsLoading] = useState(false);
+  const [, setSectionsLoading] = useState(false);
   
   const [apiKey, setApiKey] = useState('');
+  const [openaiModel, setOpenaiModel] = useState('gpt-4o');
   const [aiProvider, setAiProvider] = useState('openai');
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [ollamaModel, setOllamaModel] = useState('llama3');
@@ -103,6 +104,7 @@ export default function SettingsPage() {
                 if (data.aiProvider) setAiProvider(data.aiProvider);
                 if (data.ollamaUrl) setOllamaUrl(data.ollamaUrl);
                 if (data.ollamaModel) setOllamaModel(data.ollamaModel);
+                if (data.openaiModel) setOpenaiModel(data.openaiModel);
                 if (data.reportLanguage) setReportLanguage(data.reportLanguage);
                 
                 if (data.reportSections) {
@@ -158,12 +160,13 @@ export default function SettingsPage() {
                 aiProvider,
                 ollamaUrl,
                 ollamaModel,
+                openaiModel,
                 reportLanguage
             })
         });
         
         if (res.ok) {
-            toast.success(`Saved: ${aiProvider === 'ollama' ? 'Ollama (' + ollamaModel + ')' : 'OpenAI'} settings`);
+            toast.success(`Saved: ${aiProvider === 'ollama' ? 'Ollama (' + ollamaModel + ')' : 'OpenAI (' + openaiModel + ')'} settings`);
         } else {
             toast.error('Failed to save AI settings.');
         }
@@ -371,16 +374,34 @@ export default function SettingsPage() {
 
                 <form onSubmit={handleSaveKey} className="space-y-4 max-w-2xl mt-4">
                     {aiProvider === 'openai' && (
-                        <div>
-                            <label className="block text-xs uppercase text-zinc-500 font-bold mb-2">OpenAI API Key</label>
-                            <input 
-                                type="password" 
-                                placeholder="sk-..."
-                                value={apiKey}
-                                onChange={(e) => setApiKey(e.target.value)}
-                                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 transition-colors"
-                            />
-                            <p className="text-xs text-zinc-600 mt-2">Leave empty to use system default key.</p>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs uppercase text-zinc-500 font-bold mb-2">OpenAI API Key</label>
+                                <input 
+                                    type="password" 
+                                    placeholder="sk-..."
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 transition-colors"
+                                />
+                                <p className="text-xs text-zinc-600 mt-2">Leave empty to use system default key.</p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs uppercase text-zinc-500 font-bold mb-2">OpenAI Model</label>
+                                <select
+                                    value={openaiModel}
+                                    onChange={(e) => setOpenaiModel(e.target.value)}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 text-white outline-none focus:border-blue-500 transition-colors appearance-none"
+                                >
+                                    <option value="gpt-4o">GPT-4o (Best)</option>
+                                    <option value="gpt-4o-mini">GPT-4o Mini (Fast)</option>
+                                    <option value="o1-preview">o1-preview (Reasoning)</option>
+                                    <option value="o1-mini">o1-mini (Fast Reasoning)</option>
+                                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                            </div>
                         </div>
                     )}
 

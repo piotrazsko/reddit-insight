@@ -7,11 +7,12 @@ import { prisma } from '@/lib/db';
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    let aiConfig = {
+    const aiConfig = {
       provider: 'openai',
       openaiKey: undefined as string | undefined,
       ollamaUrl: undefined as string | undefined,
       ollamaModel: undefined as string | undefined,
+      openaiModel: 'gpt-4o',
       reportLanguage: 'English'
     };
     let reportSections: string | undefined;
@@ -25,14 +26,17 @@ export async function POST() {
               aiProvider: true,
               ollamaUrl: true,
               ollamaModel: true,
+              openaiModel: true,
               reportLanguage: true
             }
         });
+
         if (user) {
           aiConfig.provider = user.aiProvider;
           if (user.openaiKey) aiConfig.openaiKey = user.openaiKey;
           if (user.ollamaUrl) aiConfig.ollamaUrl = user.ollamaUrl;
           if (user.ollamaModel) aiConfig.ollamaModel = user.ollamaModel;
+          if (user.openaiModel) aiConfig.openaiModel = user.openaiModel;
           if (user.reportLanguage) aiConfig.reportLanguage = user.reportLanguage;
           if (user.reportSections) reportSections = user.reportSections;
         }

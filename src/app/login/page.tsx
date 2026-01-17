@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -30,8 +31,8 @@ export default function LoginPage() {
         router.push('/');
         router.refresh();
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      console.error('Login failed');
       toast.error('Login failed');
     } finally {
       setLoading(false);
@@ -43,7 +44,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 bg-zinc-900 p-8 rounded-xl border border-zinc-800">
         <div className="text-center flex flex-col items-center">
           <div className="w-16 h-16 mb-4 relative">
-             <img src="/logo.png" alt="Trend Pulse" className="w-full h-full object-contain" />
+             <Image src="/logo.png" alt="Trend Pulse" fill className="object-contain" />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             Trend Pulse
@@ -90,7 +91,7 @@ export default function LoginPage() {
 
         <div className="text-center">
           <p className="text-sm text-zinc-500">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link href="/register" className="text-blue-400 hover:underline">
               Register
             </Link>

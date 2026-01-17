@@ -12,6 +12,10 @@ const NAV_ITEMS = [
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 
+import Image from 'next/image';
+
+// ... 
+
 export function Sidebar() {
   const pathname = usePathname();
 
@@ -19,7 +23,7 @@ export function Sidebar() {
     <aside className="w-64 bg-zinc-900 border-r border-zinc-800 text-zinc-100 flex flex-col h-screen fixed left-0 top-0">
       <div className="p-6 flex items-center gap-3">
         <div className="w-8 h-8 relative">
-            <img src="/logo.png" alt="Trend Pulse Logo" className="object-contain" />
+            <Image src="/logo.png" alt="Trend Pulse Logo" fill className="object-contain" />
         </div>
         <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
           Trend Pulse

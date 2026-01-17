@@ -11,6 +11,7 @@ export interface AIConfig {
     openaiKey?: string;
     ollamaUrl?: string; // e.g. http://localhost:11434
     ollamaModel?: string; // e.g. llama3
+    openaiModel?: string; // e.g. gpt-4o
     reportLanguage?: string;
 }
 
@@ -72,9 +73,10 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
       });
   } else {
       // Default to OpenAI
+      console.log(`[AI] Using OpenAI: ${aiConfig.openaiModel || 'gpt-4o'}`);
       model = new ChatOpenAI({
         openAIApiKey: aiConfig.openaiKey || process.env.OPENAI_API_KEY,
-        modelName: 'gpt-4o', 
+        modelName: aiConfig.openaiModel || 'gpt-4o', 
         temperature: 0.2,
       });
   }
@@ -146,7 +148,7 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
     if (s.sourceId) {
         const matchingPost = posts.find(p => p.sourceId === s.sourceId);
         if (matchingPost) {
-            // @ts-expect-error - Post include source, but TS might complain about nulls
+            
             instruction += ` (STRICTLY RESTRICTED TO SOURCE: "${matchingPost.source.name}")`;
         } else {
             instruction += ` (CRITICAL: You must ONLY extract content where the Source is matching ID ${s.sourceId})`;
@@ -183,11 +185,16 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
   const now = new Date();
   const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
+  // Determine models used for metadata
+  const genModel = aiConfig.provider === 'ollama' ? (aiConfig.ollamaModel || 'llama3') : (aiConfig.openaiModel || 'gpt-4o');
+  // If translation happened, it used the same model instance currently
+  const footer = `\n\n---\n> **Generation Model:** ${aiConfig.provider} (${genModel}) | **Language:** ${aiConfig.reportLanguage || 'English'}`;
+
   // 6. Save to Database
   const report = await prisma.report.create({
     data: {
       title: `Insight - ${now.toLocaleDateString()} (${timeString})`,
-      summary: markdown,
+      summary: markdown + footer,
     },
   });
 

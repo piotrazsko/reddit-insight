@@ -1,13 +1,12 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+
 import { useState } from 'react';
 import { RefreshCw, Sparkles, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
 export default function ActionButtons() {
-  const { data: session } = useSession();
   const router = useRouter();
   
   const [syncing, setSyncing] = useState(false);

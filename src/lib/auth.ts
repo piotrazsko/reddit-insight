@@ -47,7 +47,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (token && session.user) {
-        // @ts-ignore
+        // @ts-expect-error - Prisma adapter type mismatch is known issue with Auth.js v5 beta
         session.user.id = token.sub;
       }
       return session;

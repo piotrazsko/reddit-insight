@@ -20,6 +20,7 @@ export async function GET() {
           aiProvider: true,
           ollamaUrl: true,
           ollamaModel: true,
+          openaiModel: true,
           reportLanguage: true
         }
     });
@@ -30,6 +31,7 @@ export async function GET() {
         aiProvider: user?.aiProvider || 'openai',
         ollamaUrl: user?.ollamaUrl || 'http://localhost:11434',
         ollamaModel: user?.ollamaModel || 'llama3',
+        openaiModel: user?.openaiModel || 'gpt-4o',
         reportLanguage: user?.reportLanguage || 'English'
     });
   } catch (error) {
@@ -45,16 +47,18 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { openaiKey, reportSections, aiProvider, ollamaUrl, ollamaModel, reportLanguage } = await request.json();
-    console.log('[API] Settings Update:', { aiProvider, ollamaModel, reportLanguage, hasKey: !!openaiKey });
+    const { openaiKey, reportSections, aiProvider, ollamaUrl, ollamaModel, openaiModel, reportLanguage } = await request.json();
+    console.log('[API] Settings Update:', { aiProvider, ollamaModel, openaiModel, reportLanguage, hasKey: !!openaiKey });
 
     // Prepare data object, only including defined fields
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {};
     if (openaiKey !== undefined) updateData.openaiKey = openaiKey;
     if (reportSections !== undefined) updateData.reportSections = reportSections;
     if (aiProvider !== undefined) updateData.aiProvider = aiProvider;
     if (ollamaUrl !== undefined) updateData.ollamaUrl = ollamaUrl;
     if (ollamaModel !== undefined) updateData.ollamaModel = ollamaModel;
+    if (openaiModel !== undefined) updateData.openaiModel = openaiModel;
     if (reportLanguage !== undefined) updateData.reportLanguage = reportLanguage;
 
     await prisma.user.update({

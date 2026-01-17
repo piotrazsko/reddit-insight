@@ -58,5 +58,6 @@ model User {
   aiProvider    String   @default("openai") // "openai" | "ollama"
   ollamaUrl     String?  @default("http://localhost:11434")
   ollamaModel   String?  @default("llama3")
+  openaiModel   String   @default("gpt-4o")
   reportLanguage String  @default("English")
 }
