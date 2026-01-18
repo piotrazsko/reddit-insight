@@ -9,7 +9,7 @@ import {
   formatMarkdown,
   generateReportTitle,
 } from './steps';
-import type { AIConfig, PipelineContext, ReportSection } from './types';
+import type { AIConfig, PipelineContext, ReportSection, ProgressCallback } from './types';
 
 /**
  * Parse sections config from JSON string
@@ -34,6 +34,7 @@ function parseSectionsConfig(sectionsConfig?: string): ReportSection[] {
 /**
  * Fetch unprocessed posts from last 7 days
  * Only returns posts that haven't been included in a report yet
+ * Limited to 30 posts to avoid timeout with large models
  */
 async function fetchUnprocessedPosts() {
   const weekAgo = new Date();
@@ -46,7 +47,7 @@ async function fetchUnprocessedPosts() {
     },
     include: { source: true },
     orderBy: { postedAt: 'desc' },
-    take: 100,
+    take: 30, // Reduced from 100 to prevent timeout
   });
 }
 
@@ -74,8 +75,15 @@ async function markPostsAsProcessed(postIds: string[], reportId: string) {
  * 1. Fetch unprocessed posts → 2. Prepare text → 3. Extract content → 
  * 4. Translate → 5. Format → 6. Save → 7. Mark processed
  */
-export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: string) {
+export async function generateDailyReport(
+  aiConfig: AIConfig, 
+  sectionsConfig?: string,
+  onProgress?: ProgressCallback
+) {
+  const progress = onProgress || (() => {});
+  
   console.log('[AI Pipeline] Starting report generation...');
+  progress({ step: 'fetch', message: 'Fetching posts...' });
 
   // Step 1: Fetch unprocessed posts
   const posts = await fetchUnprocessedPosts();
@@ -86,6 +94,7 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
   }
 
   console.log(`[AI Pipeline] Found ${posts.length} unprocessed posts to analyze`);
+  progress({ step: 'fetch', message: `Found ${posts.length} posts to analyze` });
 
   // Keep track of post IDs for marking as processed later
   const postIds = posts.map((p) => p.id);
@@ -99,21 +108,24 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
   };
 
   // Step 2: Prepare posts text (for unrestricted sections)
+  progress({ step: 'prepare', message: 'Preparing posts for analysis...' });
   ctx = preparePosts(ctx);
 
   // Create model
   const model = createChatModel(aiConfig);
 
   // Step 3: Extract content (handles filtering for restricted sections internally)
-  ctx = await extractContent(ctx, model);
+  ctx = await extractContent(ctx, model, onProgress);
 
   // Step 4: Translate (if needed)
-  ctx = await translateContent(ctx, model);
+  ctx = await translateContent(ctx, model, onProgress);
 
   // Step 5: Format output
+  progress({ step: 'format', message: 'Formatting report...' });
   ctx = formatMarkdown(ctx);
 
   // Step 6: Save to database
+  progress({ step: 'save', message: 'Saving report...' });
   const report = await prisma.report.create({
     data: {
       title: generateReportTitle(),
@@ -125,6 +137,7 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
   await markPostsAsProcessed(postIds, report.id);
 
   console.log(`[AI Pipeline] Report generated: ${report.id}`);
+  progress({ step: 'done', message: 'Report generated!', reportId: report.id });
 
   return report;
 }

@@ -1,16 +1,18 @@
 'use client';
 
-
 import { useState } from 'react';
 import { RefreshCw, Sparkles, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { AnalysisProgress } from '@/components/AnalysisProgress';
+import type { ProgressUpdate } from '@/lib/ai/types';
 
 export default function ActionButtons() {
   const router = useRouter();
   
   const [syncing, setSyncing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [progress, setProgress] = useState<ProgressUpdate | null>(null);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -34,49 +36,72 @@ export default function ActionButtons() {
 
   const handleAnalyze = async () => {
     setAnalyzing(true);
-    const toastId = toast.loading('Generating report...');
+    setProgress({ step: 'fetch', message: 'Starting analysis...' });
+    
     try {
-        const res = await fetch('/api/analyze', { method: 'POST' });
-        const data = await res.json();
+      const eventSource = new EventSource('/api/analyze/stream');
+      
+      eventSource.onmessage = (event) => {
+        const data: ProgressUpdate = JSON.parse(event.data);
+        setProgress(data);
         
-        if (res.status === 404) {
-            toast.warning('No recent posts found to analyze. Try syncing data first!', { id: toastId });
-        } else if (!res.ok) {
-            toast.error(`Analysis failed: ${data.message || 'Unknown error'}`, { id: toastId });
-        } else {
-             // Success - redirect to report
-             const reportId = data.report.id;
-             toast.success('Analysis generated successfully!', { id: toastId });
-             router.push(`/reports/${reportId}`);
+        if (data.step === 'done' && data.reportId) {
+          eventSource.close();
+          setAnalyzing(false);
+          setProgress(null);
+          toast.success('Report generated!');
+          router.push(`/reports/${data.reportId}`);
         }
-
-    } catch (e) {
-        console.error(e);
-        toast.error('Analysis failed.', { id: toastId });
-    } finally {
+        
+        // Keep progress modal open for errors - user will close it
+        if (data.step === 'error') {
+          eventSource.close();
+          setAnalyzing(false);
+          // Don't clear progress - show error in modal
+        }
+      };
+      
+      eventSource.onerror = () => {
+        eventSource.close();
         setAnalyzing(false);
+        setProgress({ step: 'error', message: 'Connection lost', error: 'generation_failed' });
+      };
+      
+    } catch (e) {
+      console.error(e);
+      setAnalyzing(false);
+      setProgress({ step: 'error', message: 'Analysis failed', error: 'generation_failed' });
     }
   };
 
+  const handleCloseProgress = () => {
+    setProgress(null);
+    setAnalyzing(false);
+  };
+
   return (
-    <div className="flex gap-2">
-      <button
-        onClick={handleSync}
-        disabled={syncing || analyzing}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {syncing ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
-        Sync Data
-      </button>
+    <>
+      {progress && <AnalysisProgress progress={progress} onClose={handleCloseProgress} />}
       
-      <button
-        onClick={handleAnalyze}
-        disabled={syncing || analyzing}
-        className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {analyzing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
-        Generate Report
-      </button>
-    </div>
+      <div className="flex gap-2">
+        <button
+          onClick={handleSync}
+          disabled={syncing || analyzing}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {syncing ? <Loader2 className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+          Sync Data
+        </button>
+        
+        <button
+          onClick={handleAnalyze}
+          disabled={syncing || analyzing}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {analyzing ? <Loader2 className="animate-spin" size={16} /> : <Sparkles size={16} />}
+          Generate Report
+        </button>
+      </div>
+    </>
   );
 }

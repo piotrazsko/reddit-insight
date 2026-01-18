@@ -1,67 +1,7 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { GENERATION_PROMPT } from '../prompts';
-import { createSectionSchema, type PipelineContext, type ExtractedItem, type ExtractedItemRaw, type ReportSection, type PostData } from '../types';
-
-/**
- * Format posts with global indices for AI processing
- * Returns both the formatted text and a map of index -> URL
- */
-function formatPostsWithIndices(posts: PostData[]): { text: string; urlMap: Map<number, string> } {
-  const urlMap = new Map<number, string>();
-  let postsText = '';
-  
-  // Group posts by source for readability
-  const postsBySource = new Map<string, { post: PostData; globalIndex: number }[]>();
-  
-  posts.forEach((p, idx) => {
-    const globalIndex = idx + 1; // 1-based index
-    urlMap.set(globalIndex, p.url);
-    
-    const existing = postsBySource.get(p.sourceName) || [];
-    existing.push({ post: p, globalIndex });
-    postsBySource.set(p.sourceName, existing);
-  });
-
-  postsBySource.forEach((sourcePosts, sourceName) => {
-    postsText += `\n=== SOURCE: ${sourceName} ===\n\n`;
-    sourcePosts.forEach(({ post, globalIndex }) => {
-      const contentPreview = post.content.length > 800 
-        ? post.content.substring(0, 800) + '...' 
-        : post.content;
-      postsText += `[Post ${globalIndex}] ${post.title}\n`;
-      postsText += `Content: ${contentPreview}\n\n`;
-    });
-  });
-
-  return { text: postsText, urlMap };
-}
-
-/**
- * Resolve postIndex to actual URLs
- */
-function resolveUrls(
-  rawData: Record<string, ExtractedItemRaw[]>,
-  urlMap: Map<number, string>
-): Record<string, ExtractedItem[]> {
-  const resolved: Record<string, ExtractedItem[]> = {};
-  
-  for (const [sectionId, items] of Object.entries(rawData)) {
-    resolved[sectionId] = items.map(item => ({
-      title: item.title,
-      summary: item.summary,
-      sourceUrl: urlMap.get(item.postIndex) || '#',
-    }));
-  }
-  
-  return resolved;
-}
-
-/**
- * Build instructions for a single section
- */
-function buildSingleSectionInstruction(section: ReportSection): string {
-  return `\n1. Category: "${section.title}"\n   Task: ${section.prompt}\n   Scope: Analyze ALL posts provided below for this category.`;
-}
+import { createSectionSchema, type PipelineContext, type ExtractedItem, type ExtractedItemWithUrl, type SectionResult, type ReportSection, type PostData, type ProgressCallback } from '../types';
+import { formatPostsForAI } from './prepare';
 
 /**
  * Get posts filtered by section (if source-restricted)
@@ -75,72 +15,133 @@ function getPostsForSection(allPosts: PostData[], section: ReportSection): PostD
 }
 
 /**
+ * Resolve postIndex to URL from posts array
+ */
+function resolvePostUrls(items: ExtractedItem[], posts: PostData[]): ExtractedItemWithUrl[] {
+  return items.map(item => {
+    const postIndex = item.postIndex;
+    // postIndex is 1-based
+    const post = postIndex && postIndex > 0 && postIndex <= posts.length 
+      ? posts[postIndex - 1] 
+      : undefined;
+    
+    return {
+      title: item.title,
+      summary: item.summary,
+      sourceUrl: post?.url,
+    };
+  });
+}
+
+/**
  * Step 3: Extract content using AI
- * Processes sections in groups - unrestricted sections together, restricted sections separately
- * AI returns postIndex which we resolve to actual URLs programmatically
+ * Processes each section separately for better reliability with large models
  */
 export async function extractContent(
   ctx: PipelineContext,
-  model: BaseChatModel
+  model: BaseChatModel,
+  onProgress?: ProgressCallback
 ): Promise<PipelineContext> {
-  const extractedData: Record<string, ExtractedItem[]> = {};
-  
-  // Separate sections into unrestricted and restricted
-  const unrestrictedSections = ctx.sections.filter(s => !s.sourceIds || s.sourceIds.length === 0);
-  const restrictedSections = ctx.sections.filter(s => s.sourceIds && s.sourceIds.length > 0);
+  const extractedData: Record<string, SectionResult> = {};
+  const totalSections = ctx.sections.length;
+  const progress = onProgress || (() => {});
 
-  console.log(`[AI Pipeline] Processing ${unrestrictedSections.length} unrestricted + ${restrictedSections.length} restricted sections`);
+  console.log(`[AI Pipeline] Processing ${totalSections} sections (one request per section)`);
 
-  // Process unrestricted sections together (they use all posts)
-  if (unrestrictedSections.length > 0) {
-    const { text: postsText, urlMap } = formatPostsWithIndices(ctx.posts);
+  // Process each section separately
+  for (let i = 0; i < ctx.sections.length; i++) {
+    const section = ctx.sections[i];
+    const sectionNum = i + 1;
     
-    const schema = createSectionSchema(unrestrictedSections);
-    const structuredModel = model.withStructuredOutput(schema);
-    const chain = GENERATION_PROMPT.pipe(structuredModel);
-
-    const instructions = unrestrictedSections
-      .map((s, index) => `\n${index + 1}. Category: "${s.title}"\n   Task: ${s.prompt}\n   Scope: ALL sources - analyze EVERY post for this category.`)
-      .join('\n');
-
-    console.log('[AI Pipeline] Extracting unrestricted sections...');
-    const rawResult = (await chain.invoke({
-      posts: postsText,
-      section_instructions: instructions,
-    })) as Record<string, ExtractedItemRaw[]>;
-
-    const resolved = resolveUrls(rawResult, urlMap);
-    Object.assign(extractedData, resolved);
-  }
-
-  // Process each restricted section separately with filtered posts
-  for (const section of restrictedSections) {
-    const filteredPosts = getPostsForSection(ctx.posts, section);
+    // Get posts for this section (filtered if source-restricted)
+    const postsForSection = getPostsForSection(ctx.posts, section);
     
-    if (filteredPosts.length === 0) {
-      console.log(`[AI Pipeline] Section "${section.title}" - no matching posts, skipping`);
-      extractedData[section.id] = [];
+    if (postsForSection.length === 0) {
+      console.log(`[AI Pipeline] [${sectionNum}/${totalSections}] "${section.title}" - no posts, skipping`);
+      extractedData[section.id] = { items: [], sourcePosts: [] };
+      progress({ 
+        step: 'extract', 
+        message: `Skipped "${section.title}" (no posts)`,
+        current: sectionNum,
+        total: totalSections,
+        sectionTitle: section.title
+      });
       continue;
     }
 
-    const sourceNames = [...new Set(filteredPosts.map(p => p.sourceName))];
-    console.log(`[AI Pipeline] Section "${section.title}" - using ${filteredPosts.length} posts from: ${sourceNames.join(', ')}`);
-
-    const { text: postsText, urlMap } = formatPostsWithIndices(filteredPosts);
+    const sourceNames = [...new Set(postsForSection.map(p => p.sourceName))];
+    console.log(`[AI Pipeline] [${sectionNum}/${totalSections}] "${section.title}" - ${postsForSection.length} posts from: ${sourceNames.join(', ')}`);
     
+    progress({ 
+      step: 'extract', 
+      message: `Analyzing "${section.title}"...`,
+      current: sectionNum,
+      total: totalSections,
+      sectionTitle: section.title
+    });
+
+    // Format posts for this section
+    const postsText = formatPostsForAI(postsForSection);
+    
+    // Create schema and chain for single section
     const schema = createSectionSchema([section]);
     const structuredModel = model.withStructuredOutput(schema);
     const chain = GENERATION_PROMPT.pipe(structuredModel);
 
-    const instruction = buildSingleSectionInstruction(section);
+    const instruction = `\n1. Category: "${section.title}"\n   Task: ${section.prompt}\n   Scope: Analyze ALL posts provided below for this category.`;
 
-    const rawResult = (await chain.invoke({
-      posts: postsText,
-      section_instructions: instruction,
-    })) as Record<string, ExtractedItemRaw[]>;
+    try {
+      const result = (await chain.invoke({
+        posts: postsText,
+        section_instructions: instruction,
+      })) as Record<string, ExtractedItem[]>;
 
-    const resolved = resolveUrls(rawResult, urlMap);
-    Object.assign(extractedData, resolved);
+      // Resolve post indices to URLs
+      const itemsWithUrls = resolvePostUrls(result[section.id] || [], postsForSection);
+
+      extractedData[section.id] = {
+        items: itemsWithUrls,
+        sourcePosts: postsForSection,
+      };
+      
+      const itemCount = itemsWithUrls.length;
+      console.log(`[AI Pipeline] [${sectionNum}/${totalSections}] "${section.title}" - extracted ${itemCount} items`);
+      
+      progress({ 
+        step: 'extract', 
+        message: `Completed "${section.title}" (${itemCount} insights)`,
+        current: sectionNum,
+        total: totalSections,
+        sectionTitle: section.title
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const isTimeout = errorMessage.includes('Timeout') || 
+                        (error as NodeJS.ErrnoException)?.code === 'UND_ERR_HEADERS_TIMEOUT';
+      
+      console.error(`[AI Pipeline] [${sectionNum}/${totalSections}] "${section.title}" - failed:`, errorMessage);
+      
+      // For timeout errors, throw to stop the pipeline
+      if (isTimeout) {
+        progress({ 
+          step: 'error', 
+          message: `Timeout on "${section.title}" - model too slow`,
+          error: 'timeout'
+        });
+        throw new Error(`AI model timeout on section "${section.title}". Try a smaller/faster model.`);
+      }
+      
+      // For other errors, continue with remaining sections
+      extractedData[section.id] = { items: [], sourcePosts: [] };
+      
+      progress({ 
+        step: 'extract', 
+        message: `Failed "${section.title}" - continuing...`,
+        current: sectionNum,
+        total: totalSections,
+        sectionTitle: section.title
+      });
+    }
   }
 
   return { ...ctx, extractedData };

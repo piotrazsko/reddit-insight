@@ -2,29 +2,29 @@ export const DEFAULT_REPORT_SECTIONS = [
   {
     id: 'overview',
     title: 'Executive Summary',
-    description: 'High-level overview of the most critical discussions.',
-    prompt: 'Summarize the top 3 most important discussions across all subreddits. Focus on "big news" or major controversies.',
+    description: 'High-level overview of key discussions.',
+    prompt: 'Identify the TOP 3 most important trends or discussions. What are people talking about most? Summarize briefly.',
     sourceIds: []
   },
   {
     id: 'bugs',
-    title: 'Bugs & Issues',
-    description: 'Summary of technical problems reported by users.',
-    prompt: 'Identify comments discussing bugs, crashes, errors, or technical failures. Group by specific issue.',
+    title: 'Issues & Problems',
+    description: 'Technical problems and complaints.',
+    prompt: 'What problems are users reporting? Group similar issues together. Max 3-4 key issues.',
     sourceIds: []
   },
   {
     id: 'features',
-    title: 'Feature Requests',
-    description: 'What are users asking for?',
-    prompt: 'Extract requests for new features, improvements, or changes to existing functionality.',
+    title: 'Requests & Ideas',
+    description: 'What users want.',
+    prompt: 'What features or improvements are users requesting? Summarize the top 3-4 requests.',
     sourceIds: []
   },
   {
     id: 'sentiment',
-    title: 'User Sentiment',
-    description: 'General mood of the community.',
-    prompt: 'Analyze the overall tone (Positive/Negative/Neutral). Cite specific threads that drive this sentiment.',
+    title: 'Community Mood',
+    description: 'Overall sentiment.',
+    prompt: 'What is the overall mood? Positive, negative, or mixed? Give 2-3 examples of what drives this sentiment.',
     sourceIds: []
   }
 ];

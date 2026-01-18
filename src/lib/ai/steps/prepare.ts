@@ -24,34 +24,40 @@ export function mapPostsToData(
 }
 
 /**
- * Step 1: Prepare posts text for analysis
- * Groups posts by source for better context
+ * Format posts for AI consumption with global numbering
+ * Returns formatted text and a map of post indices to posts
  */
-export function preparePosts(ctx: PipelineContext): PipelineContext {
-  // Group posts by source
-  const postsBySource = new Map<string, PostData[]>();
+export function formatPostsForAI(posts: PostData[]): string {
+  let text = '';
   
-  ctx.posts.forEach((p) => {
+  // Group by source for readability
+  const postsBySource = new Map<string, PostData[]>();
+  posts.forEach(p => {
     const existing = postsBySource.get(p.sourceName) || [];
     existing.push(p);
     postsBySource.set(p.sourceName, existing);
   });
 
-  // Format posts grouped by source
-  let postsText = '';
-  
-  postsBySource.forEach((posts, sourceName) => {
-    postsText += `\n=== SOURCE: ${sourceName} ===\n\n`;
-    posts.forEach((p, idx) => {
-      // Use more content (up to 800 chars) for better context
-      const contentPreview = p.content.length > 800 
-        ? p.content.substring(0, 800) + '...' 
+  let globalIndex = 1;
+  postsBySource.forEach((sourcePosts, sourceName) => {
+    text += `\n=== SOURCE: ${sourceName} ===\n\n`;
+    sourcePosts.forEach((p) => {
+      const contentPreview = p.content.length > 500 
+        ? p.content.substring(0, 500) + '...' 
         : p.content;
-      postsText += `[Post ${idx + 1}] ${p.title}\n`;
-      postsText += `Content: ${contentPreview}\n`;
-      postsText += `URL: ${p.url}\n\n`;
+      text += `[Post ${globalIndex}] ${p.title}\n`;
+      text += `${contentPreview}\n\n`;
+      globalIndex++;
     });
   });
 
+  return text;
+}
+
+/**
+ * Step 1: Prepare posts text for analysis
+ */
+export function preparePosts(ctx: PipelineContext): PipelineContext {
+  const postsText = formatPostsForAI(ctx.posts);
   return { ...ctx, postsText };
 }

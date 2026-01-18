@@ -1,6 +1,24 @@
 import { z } from 'zod';
 
 /**
+ * Progress callback for streaming updates
+ */
+export type ProgressCallback = (progress: ProgressUpdate) => void;
+
+/**
+ * Progress update sent during report generation
+ */
+export interface ProgressUpdate {
+  step: 'fetch' | 'prepare' | 'extract' | 'translate' | 'format' | 'save' | 'done' | 'error';
+  message: string;
+  current?: number;
+  total?: number;
+  sectionTitle?: string;
+  reportId?: string;
+  error?: string;
+}
+
+/**
  * AI Provider configuration
  */
 export interface AIConfig {
@@ -24,21 +42,27 @@ export interface ReportSection {
 }
 
 /**
- * Extracted item from AI analysis (raw from AI)
+ * Extracted item from AI analysis
  */
-export interface ExtractedItemRaw {
+export interface ExtractedItem {
   title: string;
   summary: string;
-  postIndex: number;
+  postIndex?: number; // Index of the source post (1-based)
 }
 
 /**
  * Extracted item with resolved URL
  */
-export interface ExtractedItem {
-  title: string;
-  summary: string;
-  sourceUrl: string;
+export interface ExtractedItemWithUrl extends ExtractedItem {
+  sourceUrl?: string;
+}
+
+/**
+ * Section result with items and source posts
+ */
+export interface SectionResult {
+  items: ExtractedItemWithUrl[];
+  sourcePosts: PostData[]; // Posts that were analyzed for this section
 }
 
 /**
@@ -61,15 +85,14 @@ export interface PipelineContext {
   sections: ReportSection[];
   config: AIConfig;
   postsText?: string;
-  sectionInstructions?: string;
-  extractedData?: Record<string, ExtractedItem[]>;
-  translatedData?: Record<string, ExtractedItem[]>;
+  extractedData?: Record<string, SectionResult>;
+  translatedData?: Record<string, SectionResult>;
   markdown?: string;
 }
 
 /**
  * Create dynamic Zod schema for sections
- * AI returns postIndex instead of URL - we resolve URLs programmatically
+ * AI returns title, summary, and postIndex for source linking
  */
 export function createSectionSchema(sections: ReportSection[]) {
   const schemaShape: Record<string, z.ZodArray<z.ZodObject<{
@@ -82,9 +105,9 @@ export function createSectionSchema(sections: ReportSection[]) {
     schemaShape[section.id] = z
       .array(
         z.object({
-          title: z.string().describe('Title or theme of the item'),
-          summary: z.string().describe('Detailed content/summary'),
-          postIndex: z.number().describe('The index number of the referenced post (e.g., 1, 2, 3). Use the [Post N] number from the posts data.'),
+          title: z.string().describe('Brief title of the insight (5-10 words)'),
+          summary: z.string().describe('Summary of the insight (2-3 sentences)'),
+          postIndex: z.number().describe('The post number this insight is based on (e.g., 1 for "Post 1")'),
         })
       )
       .describe(section.prompt || section.description);
