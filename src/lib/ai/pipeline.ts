@@ -3,7 +3,6 @@ import { DEFAULT_REPORT_SECTIONS } from '../defaults';
 import { createChatModel } from './models';
 import {
   preparePosts,
-  buildSectionInstructions,
   mapPostsToData,
   extractContent,
   translateContent,
@@ -72,8 +71,8 @@ async function markPostsAsProcessed(postIds: string[], reportId: string) {
  * Main AI Pipeline for generating daily reports
  * 
  * Pipeline Steps:
- * 1. Fetch unprocessed posts → 2. Prepare text → 3. Build instructions → 
- * 4. Extract content → 5. Translate → 6. Format → 7. Save → 8. Mark processed
+ * 1. Fetch unprocessed posts → 2. Prepare text → 3. Extract content → 
+ * 4. Translate → 5. Format → 6. Save → 7. Mark processed
  */
 export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: string) {
   console.log('[AI Pipeline] Starting report generation...');
@@ -99,25 +98,22 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
     config: aiConfig,
   };
 
-  // Step 2: Prepare posts text
+  // Step 2: Prepare posts text (for unrestricted sections)
   ctx = preparePosts(ctx);
-
-  // Step 3: Build section instructions
-  ctx = buildSectionInstructions(ctx);
 
   // Create model
   const model = createChatModel(aiConfig);
 
-  // Step 4: Extract content
+  // Step 3: Extract content (handles filtering for restricted sections internally)
   ctx = await extractContent(ctx, model);
 
-  // Step 5: Translate (if needed)
+  // Step 4: Translate (if needed)
   ctx = await translateContent(ctx, model);
 
-  // Step 6: Format output
+  // Step 5: Format output
   ctx = formatMarkdown(ctx);
 
-  // Step 7: Save to database
+  // Step 6: Save to database
   const report = await prisma.report.create({
     data: {
       title: generateReportTitle(),
@@ -125,7 +121,7 @@ export async function generateDailyReport(aiConfig: AIConfig, sectionsConfig?: s
     },
   });
 
-  // Step 8: Mark posts as processed and link to report
+  // Step 7: Mark posts as processed and link to report
   await markPostsAsProcessed(postIds, report.id);
 
   console.log(`[AI Pipeline] Report generated: ${report.id}`);

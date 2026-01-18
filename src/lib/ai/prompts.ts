@@ -9,32 +9,27 @@ You are an expert Content Analyzer. Your job is to categorize Reddit posts into 
 TASK: Read ALL posts below and assign them to the appropriate categories.
 
 IMPORTANT RULES:
-1. Categories marked with "Scope: ALL sources" - analyze EVERY post from ALL sources
-2. Categories marked with "RESTRICTION: Only from [sources]" - ONLY analyze posts from those specific sources listed
-3. A single post CAN and SHOULD appear in MULTIPLE categories if relevant
-4. For general categories (Executive Summary, Bugs, Features, Sentiment) - ALWAYS check ALL posts
-5. Extract meaningful insights - bugs, feature requests, important discussions
-6. If a category has no matching content, return empty array (this should be rare for general categories)
-7. When a category is restricted to multiple sources, include posts from ANY of those listed sources
+1. Analyze EVERY post provided below - all posts are pre-filtered and relevant
+2. A single post CAN and SHOULD appear in MULTIPLE categories if relevant
+3. Extract meaningful insights - bugs, feature requests, important discussions
+4. If a category has no matching content, return empty array
+5. The sourceUrl MUST be the exact URL from the post data - do not modify or fabricate URLs
 
 CATEGORIES:
 {section_instructions}
 
 ---
 
-POSTS DATA:
+POSTS DATA (analyze ALL of these):
 {posts}
 
 ---
 
-INSTRUCTIONS:
-- For EACH category, go through ALL relevant posts and extract matching content
-- Executive Summary should capture the most important/discussed topics across ALL sources
-- Bugs & Issues should find ANY technical problems mentioned in ANY post
-- Feature Requests should find ANY suggestions/wishes in ANY post  
-- User Sentiment should analyze the overall mood across ALL posts
-- Source-restricted categories should ONLY use posts from their specified source(s)
-- When multiple sources are specified, include posts from ALL of those sources
+OUTPUT INSTRUCTIONS:
+- For EACH category, carefully review ALL posts and extract matching content
+- Include the direct URL from the post as sourceUrl
+- Write concise but informative summaries
+- Group related issues/topics together when possible
 `);
 
 /**

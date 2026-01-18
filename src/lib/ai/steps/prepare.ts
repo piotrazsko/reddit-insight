@@ -1,4 +1,4 @@
-import type { PipelineContext, PostData, ReportSection } from '../types';
+import type { PipelineContext, PostData } from '../types';
 
 /**
  * Map database posts to PostData format
@@ -54,49 +54,4 @@ export function preparePosts(ctx: PipelineContext): PipelineContext {
   });
 
   return { ...ctx, postsText };
-}
-
-/**
- * Step 2: Build section instructions for the prompt
- * For source-restricted sections, also filter which posts to include
- */
-export function buildSectionInstructions(ctx: PipelineContext): PipelineContext {
-  const sectionInstructions = ctx.sections
-    .map((s, index) => {
-      let instruction = `\n${index + 1}. Category: "${s.title}"`;
-      instruction += `\n   Task: ${s.prompt}`;
-      
-      const sourceIds = s.sourceIds || [];
-      if (sourceIds.length > 0) {
-        // Find the source names for these sourceIds
-        const sourceNames = sourceIds
-          .map(sourceId => {
-            const matchingPost = ctx.posts.find((p) => p.sourceId === sourceId);
-            return matchingPost?.sourceName;
-          })
-          .filter(Boolean);
-        
-        if (sourceNames.length > 0) {
-          instruction += `\n   ⚠️ RESTRICTION: Only from these sources: ${sourceNames.map(n => `"${n}"`).join(', ')}. IGNORE other sources.`;
-        }
-      } else {
-        instruction += `\n   Scope: ALL sources - analyze EVERY post for this category.`;
-      }
-      
-      return instruction;
-    })
-    .join('\n');
-
-  return { ...ctx, sectionInstructions };
-}
-
-/**
- * Get posts filtered by section (if source-restricted)
- */
-export function getPostsForSection(ctx: PipelineContext, section: ReportSection): PostData[] {
-  const sourceIds = section.sourceIds || [];
-  if (sourceIds.length > 0) {
-    return ctx.posts.filter((p) => sourceIds.includes(p.sourceId));
-  }
-  return ctx.posts;
 }
