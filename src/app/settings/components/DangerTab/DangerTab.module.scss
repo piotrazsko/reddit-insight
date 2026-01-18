@@ -68,6 +68,33 @@
   color: rgb(113 113 122); // zinc-500
 }
 
+.divider {
+  height: 1px;
+  background-color: rgb(39 39 42); // zinc-800
+  margin: 0.5rem 0;
+}
+
+.resetButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(234, 179, 8, 0.1); // yellow-500/10
+  color: rgb(234 179 8); // yellow-500
+  border: 1px solid rgba(234, 179, 8, 0.5); // yellow-500/50
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: rgb(234 179 8); // yellow-500
+    color: rgb(9 9 11); // zinc-950
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
 .deleteButton {
   display: flex;
   align-items: center;

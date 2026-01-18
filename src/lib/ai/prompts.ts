@@ -13,7 +13,7 @@ IMPORTANT RULES:
 2. A single post CAN and SHOULD appear in MULTIPLE categories if relevant
 3. Extract meaningful insights - bugs, feature requests, important discussions
 4. If a category has no matching content, return empty array
-5. The sourceUrl MUST be the exact URL from the post data - do not modify or fabricate URLs
+5. For postIndex - use the number from [Post N] marker (e.g., if post is marked [Post 3], use postIndex: 3)
 
 CATEGORIES:
 {section_instructions}
@@ -27,7 +27,7 @@ POSTS DATA (analyze ALL of these):
 
 OUTPUT INSTRUCTIONS:
 - For EACH category, carefully review ALL posts and extract matching content
-- Include the direct URL from the post as sourceUrl
+- Use the post number from [Post N] as the postIndex value
 - Write concise but informative summaries
 - Group related issues/topics together when possible
 `);

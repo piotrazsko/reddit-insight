@@ -24,7 +24,16 @@ export interface ReportSection {
 }
 
 /**
- * Extracted item from AI analysis
+ * Extracted item from AI analysis (raw from AI)
+ */
+export interface ExtractedItemRaw {
+  title: string;
+  summary: string;
+  postIndex: number;
+}
+
+/**
+ * Extracted item with resolved URL
  */
 export interface ExtractedItem {
   title: string;
@@ -60,12 +69,13 @@ export interface PipelineContext {
 
 /**
  * Create dynamic Zod schema for sections
+ * AI returns postIndex instead of URL - we resolve URLs programmatically
  */
 export function createSectionSchema(sections: ReportSection[]) {
   const schemaShape: Record<string, z.ZodArray<z.ZodObject<{
     title: z.ZodString;
     summary: z.ZodString;
-    sourceUrl: z.ZodString;
+    postIndex: z.ZodNumber;
   }>>> = {};
 
   sections.forEach((section) => {
@@ -74,7 +84,7 @@ export function createSectionSchema(sections: ReportSection[]) {
         z.object({
           title: z.string().describe('Title or theme of the item'),
           summary: z.string().describe('Detailed content/summary'),
-          sourceUrl: z.string().describe('The DIRECT link to the reddit post. MUST be a valid URL.'),
+          postIndex: z.number().describe('The index number of the referenced post (e.g., 1, 2, 3). Use the [Post N] number from the posts data.'),
         })
       )
       .describe(section.prompt || section.description);

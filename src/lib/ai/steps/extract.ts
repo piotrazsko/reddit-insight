@@ -1,34 +1,59 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { GENERATION_PROMPT } from '../prompts';
-import { createSectionSchema, type PipelineContext, type ExtractedItem, type ReportSection, type PostData } from '../types';
+import { createSectionSchema, type PipelineContext, type ExtractedItem, type ExtractedItemRaw, type ReportSection, type PostData } from '../types';
 
 /**
- * Format posts for a specific subset
+ * Format posts with global indices for AI processing
+ * Returns both the formatted text and a map of index -> URL
  */
-function formatPostsText(posts: PostData[]): string {
-  const postsBySource = new Map<string, PostData[]>();
+function formatPostsWithIndices(posts: PostData[]): { text: string; urlMap: Map<number, string> } {
+  const urlMap = new Map<number, string>();
+  let postsText = '';
   
-  posts.forEach((p) => {
+  // Group posts by source for readability
+  const postsBySource = new Map<string, { post: PostData; globalIndex: number }[]>();
+  
+  posts.forEach((p, idx) => {
+    const globalIndex = idx + 1; // 1-based index
+    urlMap.set(globalIndex, p.url);
+    
     const existing = postsBySource.get(p.sourceName) || [];
-    existing.push(p);
+    existing.push({ post: p, globalIndex });
     postsBySource.set(p.sourceName, existing);
   });
 
-  let postsText = '';
-  
   postsBySource.forEach((sourcePosts, sourceName) => {
     postsText += `\n=== SOURCE: ${sourceName} ===\n\n`;
-    sourcePosts.forEach((p, idx) => {
-      const contentPreview = p.content.length > 800 
-        ? p.content.substring(0, 800) + '...' 
-        : p.content;
-      postsText += `[Post ${idx + 1}] ${p.title}\n`;
-      postsText += `Content: ${contentPreview}\n`;
-      postsText += `URL: ${p.url}\n\n`;
+    sourcePosts.forEach(({ post, globalIndex }) => {
+      const contentPreview = post.content.length > 800 
+        ? post.content.substring(0, 800) + '...' 
+        : post.content;
+      postsText += `[Post ${globalIndex}] ${post.title}\n`;
+      postsText += `Content: ${contentPreview}\n\n`;
     });
   });
 
-  return postsText;
+  return { text: postsText, urlMap };
+}
+
+/**
+ * Resolve postIndex to actual URLs
+ */
+function resolveUrls(
+  rawData: Record<string, ExtractedItemRaw[]>,
+  urlMap: Map<number, string>
+): Record<string, ExtractedItem[]> {
+  const resolved: Record<string, ExtractedItem[]> = {};
+  
+  for (const [sectionId, items] of Object.entries(rawData)) {
+    resolved[sectionId] = items.map(item => ({
+      title: item.title,
+      summary: item.summary,
+      sourceUrl: urlMap.get(item.postIndex) || '#',
+    }));
+  }
+  
+  return resolved;
 }
 
 /**
@@ -52,6 +77,7 @@ function getPostsForSection(allPosts: PostData[], section: ReportSection): PostD
 /**
  * Step 3: Extract content using AI
  * Processes sections in groups - unrestricted sections together, restricted sections separately
+ * AI returns postIndex which we resolve to actual URLs programmatically
  */
 export async function extractContent(
   ctx: PipelineContext,
@@ -67,6 +93,8 @@ export async function extractContent(
 
   // Process unrestricted sections together (they use all posts)
   if (unrestrictedSections.length > 0) {
+    const { text: postsText, urlMap } = formatPostsWithIndices(ctx.posts);
+    
     const schema = createSectionSchema(unrestrictedSections);
     const structuredModel = model.withStructuredOutput(schema);
     const chain = GENERATION_PROMPT.pipe(structuredModel);
@@ -76,12 +104,13 @@ export async function extractContent(
       .join('\n');
 
     console.log('[AI Pipeline] Extracting unrestricted sections...');
-    const result = (await chain.invoke({
-      posts: ctx.postsText,
+    const rawResult = (await chain.invoke({
+      posts: postsText,
       section_instructions: instructions,
-    })) as Record<string, ExtractedItem[]>;
+    })) as Record<string, ExtractedItemRaw[]>;
 
-    Object.assign(extractedData, result);
+    const resolved = resolveUrls(rawResult, urlMap);
+    Object.assign(extractedData, resolved);
   }
 
   // Process each restricted section separately with filtered posts
@@ -97,19 +126,21 @@ export async function extractContent(
     const sourceNames = [...new Set(filteredPosts.map(p => p.sourceName))];
     console.log(`[AI Pipeline] Section "${section.title}" - using ${filteredPosts.length} posts from: ${sourceNames.join(', ')}`);
 
+    const { text: postsText, urlMap } = formatPostsWithIndices(filteredPosts);
+    
     const schema = createSectionSchema([section]);
     const structuredModel = model.withStructuredOutput(schema);
     const chain = GENERATION_PROMPT.pipe(structuredModel);
 
-    const postsText = formatPostsText(filteredPosts);
     const instruction = buildSingleSectionInstruction(section);
 
-    const result = (await chain.invoke({
+    const rawResult = (await chain.invoke({
       posts: postsText,
       section_instructions: instruction,
-    })) as Record<string, ExtractedItem[]>;
+    })) as Record<string, ExtractedItemRaw[]>;
 
-    Object.assign(extractedData, result);
+    const resolved = resolveUrls(rawResult, urlMap);
+    Object.assign(extractedData, resolved);
   }
 
   return { ...ctx, extractedData };

@@ -23,6 +23,7 @@ export default function SettingsPage() {
 
   // Loading states
   const [loading, setLoading] = useState(false);
+  const [fullResetLoading, setFullResetLoading] = useState(false);
   const [keyLoading, setKeyLoading] = useState(false);
   const [fetchingModels, setFetchingModels] = useState(false);
 
@@ -124,7 +125,7 @@ export default function SettingsPage() {
   const handleReset = useCallback(async () => {
     if (
       !confirm(
-        'Are you ABSOLUTELY sure? This will delete ALL posts and reports history. This action cannot be undone.'
+        'Reset analysis data? This will delete all posts and reports. Sources and settings will be preserved.'
       )
     ) {
       return;
@@ -134,7 +135,7 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/reset', { method: 'POST' });
       if (res.ok) {
-        toast.success('Data cleared successfully.');
+        toast.success('Analysis data cleared successfully.');
         router.refresh();
       } else {
         toast.error('Failed to clear data.');
@@ -144,6 +145,46 @@ export default function SettingsPage() {
       toast.error('Error clearing data.');
     } finally {
       setLoading(false);
+    }
+  }, [router]);
+
+  const handleFullReset = useCallback(async () => {
+    if (
+      !confirm(
+        '⚠️ FULL FACTORY RESET ⚠️\n\nThis will permanently delete:\n• All posts\n• All reports\n• All sources\n• Reset all settings to defaults\n\nThis action CANNOT be undone. Are you absolutely sure?'
+      )
+    ) {
+      return;
+    }
+
+    // Double confirm for safety
+    if (!confirm('Last chance! Type "yes" mentally and click OK to proceed with full reset.')) {
+      return;
+    }
+
+    setFullResetLoading(true);
+    try {
+      const res = await fetch('/api/reset', { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Full reset completed. Starting fresh!');
+        // Reset local state
+        setSections(DEFAULT_REPORT_SECTIONS);
+        setSources([]);
+        setApiKey('');
+        setAiProvider('openai');
+        setOllamaUrl('http://localhost:11434');
+        setOllamaModel('llama3');
+        setOpenaiModel(OPENAI_DEFAULT_MODEL);
+        setReportLanguage('English');
+        router.refresh();
+      } else {
+        toast.error('Failed to perform full reset.');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Error during full reset.');
+    } finally {
+      setFullResetLoading(false);
     }
   }, [router]);
 
@@ -299,7 +340,14 @@ export default function SettingsPage() {
         />
       )}
 
-      {activeTab === 'danger' && <DangerTab loading={loading} onReset={handleReset} />}
+      {activeTab === 'danger' && (
+        <DangerTab
+          loading={loading}
+          fullResetLoading={fullResetLoading}
+          onReset={handleReset}
+          onFullReset={handleFullReset}
+        />
+      )}
 
       <SectionModal
         isOpen={isModalOpen}
