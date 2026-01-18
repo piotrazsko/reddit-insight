@@ -48,6 +48,7 @@ export default function SettingsPage() {
     description: '',
     prompt: '',
     sourceIds: [] as string[],
+    mode: 'overview' as 'overview' | 'posts',
   });
 
   // Fetch settings on mount
@@ -239,7 +240,7 @@ export default function SettingsPage() {
 
   const openAddModal = useCallback(() => {
     setEditingSection(null);
-    setSectionForm({ title: '', description: '', prompt: '', sourceIds: [] });
+    setSectionForm({ title: '', description: '', prompt: '', sourceIds: [], mode: 'overview' });
     setIsModalOpen(true);
   }, []);
 
@@ -250,6 +251,7 @@ export default function SettingsPage() {
       description: section.description,
       prompt: section.prompt,
       sourceIds: section.sourceIds || [],
+      mode: section.mode || 'overview',
     });
     setIsModalOpen(true);
   }, []);

@@ -1,9 +1,50 @@
 import { getModelName } from '../models';
-import type { PipelineContext, SectionResult } from '../types';
+import type { PipelineContext, SectionResult, ReportSection } from '../types';
+
+/**
+ * Format items for OVERVIEW mode - analytical narrative
+ */
+function formatOverviewItems(items: SectionResult['items']): string {
+  if (items.length === 0) {
+    return `*No significant discussions found.*\n\n`;
+  }
+
+  let markdown = '';
+  items.forEach((item) => {
+    markdown += `**${item.title}**\n`;
+    markdown += `${item.summary}`;
+    if (item.sourceUrl) {
+      markdown += ` [[source]](${item.sourceUrl})`;
+    }
+    markdown += `\n\n`;
+  });
+  return markdown;
+}
+
+/**
+ * Format items for POSTS mode - list of curated posts
+ */
+function formatPostsItems(items: SectionResult['items']): string {
+  if (items.length === 0) {
+    return `*No relevant posts found.*\n\n`;
+  }
+
+  let markdown = '';
+  items.forEach((item, index) => {
+    const num = index + 1;
+    if (item.sourceUrl) {
+      markdown += `${num}. **[${item.title}](${item.sourceUrl})**\n`;
+    } else {
+      markdown += `${num}. **${item.title}**\n`;
+    }
+    markdown += `   ${item.summary}\n\n`;
+  });
+  return markdown;
+}
 
 /**
  * Step 5: Format output as Markdown
- * Includes links to source posts
+ * Uses different formatting based on section mode
  */
 export function formatMarkdown(ctx: PipelineContext): PipelineContext {
   const data = ctx.translatedData || ctx.extractedData;
@@ -14,23 +55,16 @@ export function formatMarkdown(ctx: PipelineContext): PipelineContext {
 
   let markdown = '';
 
-  ctx.sections.forEach((section) => {
+  ctx.sections.forEach((section: ReportSection) => {
     markdown += `## ${section.title}\n\n`;
     const sectionResult: SectionResult = data[section.id] || { items: [], sourcePosts: [] };
     const { items } = sectionResult;
 
-    if (items.length === 0) {
-      markdown += `*No significant findings.*\n\n`;
+    // Format based on section mode
+    if (section.mode === 'posts') {
+      markdown += formatPostsItems(items);
     } else {
-      items.forEach((item) => {
-        // Title with link if available
-        if (item.sourceUrl) {
-          markdown += `### [${item.title}](${item.sourceUrl})\n`;
-        } else {
-          markdown += `### ${item.title}\n`;
-        }
-        markdown += `${item.summary}\n\n`;
-      });
+      markdown += formatOverviewItems(items);
     }
     
     markdown += '---\n\n';

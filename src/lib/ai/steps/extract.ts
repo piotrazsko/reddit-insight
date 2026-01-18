@@ -1,7 +1,14 @@
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { GENERATION_PROMPT } from '../prompts';
+import { OVERVIEW_PROMPT, POSTS_LIST_PROMPT } from '../prompts';
 import { createSectionSchema, type PipelineContext, type ExtractedItem, type ExtractedItemWithUrl, type SectionResult, type ReportSection, type PostData, type ProgressCallback } from '../types';
 import { formatPostsForAI } from './prepare';
+
+/**
+ * Get the prompt template based on section mode
+ */
+function getPromptForMode(mode: 'overview' | 'posts' = 'overview') {
+  return mode === 'posts' ? POSTS_LIST_PROMPT : OVERVIEW_PROMPT;
+}
 
 /**
  * Get posts filtered by section (if source-restricted)
@@ -83,12 +90,18 @@ export async function extractContent(
     // Format posts for this section
     const postsText = formatPostsForAI(postsForSection);
     
+    // Select prompt based on section mode
+    const prompt = getPromptForMode(section.mode);
+    const modeLabel = section.mode === 'posts' ? 'posts list' : 'overview';
+    
     // Create schema and chain for single section
     const schema = createSectionSchema([section]);
     const structuredModel = model.withStructuredOutput(schema);
-    const chain = GENERATION_PROMPT.pipe(structuredModel);
+    const chain = prompt.pipe(structuredModel);
 
     const instruction = `\n1. Category: "${section.title}"\n   Task: ${section.prompt}\n   Scope: Analyze ALL posts provided below for this category.`;
+    
+    console.log(`[AI Pipeline] [${sectionNum}/${totalSections}] "${section.title}" - mode: ${modeLabel}`);
 
     try {
       const result = (await chain.invoke({

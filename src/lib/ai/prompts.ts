@@ -1,21 +1,18 @@
 import { PromptTemplate } from '@langchain/core/prompts';
 
 /**
- * Prompt for content extraction/generation
+ * Prompt for OVERVIEW mode - analytical summary of trends
  */
-export const GENERATION_PROMPT = PromptTemplate.fromTemplate(`
-You are an expert Content Analyst creating a focused executive report.
+export const OVERVIEW_PROMPT = PromptTemplate.fromTemplate(`
+You are an expert analyst creating an OVERVIEW of community discussions.
 
-TASK: Select the 3-5 MOST INTERESTING posts for this category and summarize them.
+TASK: Write a brief analytical summary of what people are discussing in this category.
 
-RULES:
-1. Pick 3-5 posts that best match the category
-2. For each selected post, provide:
-   - A brief title (5-10 words)
-   - A 2-3 sentence summary of what makes it interesting
-   - The post number (postIndex) - IMPORTANT: use the exact number from "[Post X]"
-3. Focus on the most valuable/actionable insights
-4. If nothing relevant, return empty array
+OUTPUT FORMAT:
+- Write 2-4 key observations/trends as separate items
+- Each item should describe a THEME or TREND, not just summarize one post
+- Include the postIndex of the MOST RELEVANT post for each observation (for source linking)
+- Be analytical: "People are frustrated with X", "There's growing interest in Y", "The community recommends Z"
 
 CATEGORY:
 {section_instructions}
@@ -27,8 +24,38 @@ POSTS TO ANALYZE:
 
 ---
 
-Select and summarize the most relevant posts for this category. Always include the postIndex.
+Write an analytical overview. Focus on WHAT people are saying and WHY.
 `);
+
+/**
+ * Prompt for POSTS mode - curated list of specific posts
+ */
+export const POSTS_LIST_PROMPT = PromptTemplate.fromTemplate(`
+You are a content curator selecting the BEST posts for a specific category.
+
+TASK: Select 3-5 most relevant/interesting posts that match this category.
+
+OUTPUT FORMAT:
+- For each selected post provide:
+  - title: Brief descriptive title (can be different from original)
+  - summary: 1-2 sentences about what makes this post interesting
+  - postIndex: The exact post number from "[Post X]" 
+
+CATEGORY:
+{section_instructions}
+
+---
+
+POSTS TO ANALYZE:
+{posts}
+
+---
+
+Select the best posts for this category. Include postIndex for each.
+`);
+
+// Alias for backward compatibility
+export const GENERATION_PROMPT = OVERVIEW_PROMPT;
 
 /**
  * Prompt for translation

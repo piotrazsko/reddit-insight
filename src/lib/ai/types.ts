@@ -39,6 +39,8 @@ export interface ReportSection {
   description: string;
   prompt: string;
   sourceIds?: string[];
+  /** Mode: 'overview' for analytical summary, 'posts' for list of specific posts */
+  mode?: 'overview' | 'posts';
 }
 
 /**

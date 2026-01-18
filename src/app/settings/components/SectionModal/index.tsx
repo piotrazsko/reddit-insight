@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useCallback } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, FileText, List } from 'lucide-react';
 import type { Source } from '../../types';
 import styles from './SectionModal.module.scss';
 
@@ -10,6 +10,7 @@ interface SectionFormData {
   description: string;
   prompt: string;
   sourceIds: string[];
+  mode?: 'overview' | 'posts';
 }
 
 interface SectionModalProps {
@@ -113,6 +114,31 @@ export const SectionModal = memo<SectionModalProps>(({
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          <div className={styles.field}>
+            <label className={styles.label}>Output Mode</label>
+            <p className={styles.hint}>How AI should format results for this section.</p>
+            <div className={styles.modeList}>
+              <button
+                type="button"
+                onClick={() => onFormChange({ ...form, mode: 'overview' })}
+                className={`${styles.modeItem} ${(!form.mode || form.mode === 'overview') ? styles.modeItemActive : ''}`}
+              >
+                <FileText size={16} />
+                <span className={styles.modeTitle}>Overview</span>
+                <span className={styles.modeDesc}>Analytical summary of trends</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onFormChange({ ...form, mode: 'posts' })}
+                className={`${styles.modeItem} ${form.mode === 'posts' ? styles.modeItemActive : ''}`}
+              >
+                <List size={16} />
+                <span className={styles.modeTitle}>Posts List</span>
+                <span className={styles.modeDesc}>Curated list of best posts</span>
+              </button>
             </div>
           </div>
 
