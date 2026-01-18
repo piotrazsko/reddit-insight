@@ -26,7 +26,7 @@ export default async function ReportDetailPage(props: Props) {
         />
       </div>
 
-      <article className="prose prose-invert prose-lg max-w-none space-y-8 [&>ul]:space-y-4 [&>h1]:text-blue-400">
+      <article className="prose prose-invert prose-lg max-w-none space-y-8 [&>ul]:space-y-4 [&>h1]:text-purple-400 [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:mt-8 [&>h1]:mb-4 [&>h1]:border-b [&>h1]:border-zinc-800 [&>h1]:pb-2">
         <Markdown
           components={{
             a: ({ ...props }) => (
