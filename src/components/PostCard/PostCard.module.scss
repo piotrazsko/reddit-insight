@@ -58,12 +58,41 @@
   }
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.actionButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  color: rgb(113 113 122); // zinc-500
+  cursor: pointer;
+  transition: all 0.2s;
+  border-radius: 6px;
+
+  &:hover {
+    color: rgb(168 85 247); // purple-500
+    background: rgba(168, 85, 247, 0.1);
+  }
+}
+
 .link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem;
   color: rgb(113 113 122); // zinc-500
-  transition: color 0.2s;
+  transition: all 0.2s;
+  border-radius: 6px;
 
   &:hover {
     color: white;
+    background: rgba(255, 255, 255, 0.1);
   }
 }
